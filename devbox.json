@@ -1,10 +1,12 @@
 {
   "packages": {
     "actionlint":                           "latest",
+    "clusterctl":                           "latest",
     "coreutils":                            "latest",
     "envsubst":                             "latest",
     "findutils":                            "latest",
     "gh":                                   "latest",
+    "ginkgo":                               "latest",
     "git":                                  "latest",
     "gnumake":                              "latest",
     "gnused":                               "latest",

@@ -83,6 +83,17 @@ make lint
 make pre-commit
 ```
 
+### e2e tests
+
+```bash
+make e2e-test
+```
+
+e2e tests live in `test/e2e` (Ginkgo, `e2e` build tag). The target creates a KinD cluster, installs
+Cluster API with the Docker infrastructure provider (CAPD) using `clusterctl`, then runs the suite.
+The planned test runs a local checkout of the same CAPI version under kmirror and verifies it reconciles
+by creating a Docker cluster. Until tests exist, the target is a no-op.
+
 ### Local cluster
 
 ```bash

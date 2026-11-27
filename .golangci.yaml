@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 version: "2"
+run:
+  build-tags:
+    - e2e
 linters:
   default: none
   enable:
