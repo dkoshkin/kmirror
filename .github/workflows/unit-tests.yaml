@@ -1,0 +1,55 @@
+# Copyright 2026 Dimitri Koshkin. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+name: unit-tests
+
+on:
+  push:
+    branches:
+      - main
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  checks: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+
+      - name: Install devbox
+        uses: jetify-com/devbox-install-action@v0.16.0
+        with:
+          enable-cache: true
+
+      - name: Go cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run unit tests
+        run: devbox run -- make test
+
+      - name: Annotate tests
+        if: always()
+        uses: guyarb/golang-test-annotations@v0.9.0
+        with:
+          test-results: test.json
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
