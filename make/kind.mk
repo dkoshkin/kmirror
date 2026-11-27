@@ -7,9 +7,9 @@ KIND_CLUSTER_NAME ?= $(GITHUB_REPOSITORY)-dev
 KIND_KUBECONFIG ?= $(KIND_DIR)/$(KIND_CLUSTER_NAME)/kubeconfig
 
 KINDEST_NODE_IMAGE ?= kindest/node
-KINDEST_NODE_VERSION_v1.33 ?= v1.33.1
+KINDEST_NODE_VERSION_v1.35 ?= v1.35.5
 # Allow easy override of Kubernetes version to use via `make KIND_KUBERNETES_VERSION=v1.23` to use in CI
-KIND_KUBERNETES_VERSION ?= v1.33
+KIND_KUBERNETES_VERSION ?= v1.35
 ifndef KINDEST_NODE_VERSION_$(KIND_KUBERNETES_VERSION)
   $(error Unsupported Kind Kubernetes version: $(KIND_KUBERNETES_VERSION) (use on of: [$(patsubst KINDEST_NODE_VERSION_%,%,$(filter KINDEST_NODE_VERSION_%,$(.VARIABLES)))]))
 endif
@@ -17,14 +17,12 @@ endif
 export KINDEST_IMAGE_TAG ?= $(KINDEST_NODE_VERSION_$(KIND_KUBERNETES_VERSION))
 KINDEST_IMAGE = $(KINDEST_NODE_IMAGE):$(KINDEST_IMAGE_TAG)
 
-CERT_MANAGER_VERSION ?= v1.19.2
-
 .PHONY: kind.recreate
 kind.recreate: ## Re-creates new KinD cluster if necessary
 kind.recreate: kind.delete kind.create
 
 .PHONY: kind.create
-kind.create: ## Creates new KinD cluster and installs cert-manager
+kind.create: ## Creates new KinD cluster
 kind.create: ; $(info $(M) creating kind cluster - $(KIND_CLUSTER_NAME))
 	(kind get clusters 2>/dev/null | grep -Eq '^$(KIND_CLUSTER_NAME)$$' && echo '$(KIND_CLUSTER_NAME) already exists') || \
 		( \
@@ -33,9 +31,7 @@ kind.create: ; $(info $(M) creating kind cluster - $(KIND_CLUSTER_NAME))
 		    --cluster-name $(KIND_CLUSTER_NAME) \
 		    --kindest-image $(KINDEST_IMAGE) \
 		    --output-dir $(KIND_DIR)/$(KIND_CLUSTER_NAME) \
-		    --base-config $(REPO_ROOT)/hack/kind/kind-base-config.yaml && \
-		  env KUBECONFIG=$(KIND_KUBECONFIG) \
-		  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/$(CERT_MANAGER_VERSION)/cert-manager.yaml \
+		    --base-config $(REPO_ROOT)/hack/kind/kind-base-config.yaml \
 		)
 
 .PHONY: kind.delete

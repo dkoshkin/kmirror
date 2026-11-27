@@ -13,18 +13,29 @@ Deployment. It wraps [mirrord][mirrord] so your binary runs with the Pod's netwo
 ServiceAccount, takes over the controller's leader-election Lease so only your local copy reconciles,
 and hands control back to the in-cluster controller when you exit.
 
-> **Status:** early development. The CLI is not implemented yet.
+> **Status:** early development.
+
+## Usage
+
+```bash
+kmirror -n NAMESPACE -d DEPLOYMENT BINARY [-- EXTRA_ARGS...]
+```
+
+For example, to run a local build of the [Kubemark provider][capk] in place of the in-cluster one:
+
+```bash
+CGO_ENABLED=1 go build -o bin/manager .
+kmirror -n capk-system -d capk-controller-manager ./bin/manager -- --v=4
+```
+
+Press Ctrl-C to stop the local manager and hand control back to the in-cluster one.
 
 ## How it works
 
-```bash
-kmirror -n capk-system -d capk-controller-manager ./bin/manager -- --zap-devel=true
-```
-
 1. **Discovers the setup from the Deployment.** It picks the `manager` container (or the first container),
    its probe ports, the ports to steal (typically the `9443` webhook port), the secret and projected mounts
-   to read from the Pod (webhook serving certs, ServiceAccount token), and the leader-election Lease held by
-   the current leader Pod.
+   to read from the Pod (webhook serving certs, ServiceAccount token), and the leader-election Lease in the
+   Deployment's namespace that is held by one of its Pods.
 2. **Builds the command line.** It inherits the container's flags, drops the ones that don't make sense locally
    (`--kubeconfig`, leader election, metrics, health and profiler bind addresses), expands `$(VAR)` references,
    adds `--leader-elect=false` and appends anything after `--`.
@@ -36,12 +47,6 @@ kmirror -n capk-system -d capk-controller-manager ./bin/manager -- --zap-devel=t
    container. `KUBECONFIG` is unset, so your binary authenticates as the Pod's ServiceAccount.
 6. **Cleans up on exit.** It deletes the Lease if it still holds it, and the in-cluster manager resumes
    reconciling within seconds.
-
-Options:
-
-- `--dry-run` prints the detected ports, Lease, final command line and mirrord config without changing anything.
-- `--no-takeover` leaves the Lease alone, so the local copy only serves webhooks.
-- `-p <port>` overrides the detected steal ports.
 
 ## Prerequisites
 
@@ -89,10 +94,19 @@ make pre-commit
 make e2e-test
 ```
 
-e2e tests live in `test/e2e` (Ginkgo, `e2e` build tag). The target creates a KinD cluster, installs
-Cluster API with the Docker infrastructure provider (CAPD) using `clusterctl`, then runs the suite.
-The planned test runs a local checkout of the same CAPI version under kmirror and verifies it reconciles
-by creating a Docker cluster. Until tests exist, the target is a no-op.
+e2e tests live in `test/e2e` (Ginkgo, `e2e` build tag). The target:
+
+1. Creates a KinD cluster and installs Cluster API, CAPD and the Kubemark provider (CAPK) with `clusterctl`.
+2. Shallow-clones CAPK at the installed version and builds its manager with `CGO_ENABLED=1`.
+3. Runs that manager locally under kmirror in place of `capk-system/capk-controller-manager`.
+4. Creates a workload cluster with a CAPD control plane and a Kubemark worker, and waits for the worker Machine
+   to join as a Node while kmirror holds the Lease.
+5. Stops kmirror and checks the in-cluster manager takes the Lease back.
+
+Versions are pinned in [`make/clusterctl.mk`](make/clusterctl.mk) and [`make/e2e.mk`](make/e2e.mk).
+
+The CAPK controller and Kubemark images are published for `linux/amd64` only, so the e2e tests need an amd64
+Docker host. They run in CI on every PR.
 
 ### Local cluster
 
@@ -143,6 +157,7 @@ read and write access to Contents, Pull requests and Issues.
 [pre-commit-hooks]: https://pre-commit.com/#3-install-the-git-hook-scripts
 [mirrord]: https://github.com/metalbear-co/mirrord
 [kubectl]: https://kubernetes.io/docs/tasks/tools/
+[capk]: https://github.com/kubernetes-sigs/cluster-api-provider-kubemark
 [release-please-action]: https://github.com/googleapis/release-please-action
 [goreleaser]: https://goreleaser.com/
 [Github-PAT]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens

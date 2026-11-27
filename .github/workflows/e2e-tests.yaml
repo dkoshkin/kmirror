@@ -71,3 +71,14 @@ jobs:
           report_paths: 'junit-e2e.xml'
           check_name: 'e2e test report'
           detailed_summary: true
+
+      - name: Dump cluster state
+        if: failure()
+        env:
+          KUBECONFIG: ${{ env.KIND_KUBECONFIG }}
+        run: |
+          devbox run -- kubectl get clusters,machines,kubemarkmachines,dockermachines -A -o wide || true
+          devbox run -- kubectl get pods,leases -A -o wide || true
+          devbox run -- kubectl -n capk-system describe pods || true
+          devbox run -- kubectl -n capk-system logs deployment/capk-controller-manager --all-containers --previous || true
+          devbox run -- kubectl -n capk-system logs deployment/capk-controller-manager --all-containers || true

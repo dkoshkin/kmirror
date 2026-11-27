@@ -988,6 +988,44 @@
         }
       }
     },
+    "mirrord@latest": {
+      "last_modified": "2026-11-22T18:15:35Z",
+      "resolved": "github:NixOS/nixpkgs/619c39f6eac5d1ed6b8f073a9414baf7034b2356#mirrord",
+      "source": "devbox-search",
+      "version": "3.287.0",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/mzz3lhlps3mbzkpw7b44i7skyqbiyzzg-mirrord-3.287.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/mzz3lhlps3mbzkpw7b44i7skyqbiyzzg-mirrord-3.287.0"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/ai7mvwljrw6h8dc1cdjsmbdprrsynh45-mirrord-3.287.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/ai7mvwljrw6h8dc1cdjsmbdprrsynh45-mirrord-3.287.0"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/mdr87f7jfdvb2jry36g77ijm3if0l3lh-mirrord-3.287.0",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/mdr87f7jfdvb2jry36g77ijm3if0l3lh-mirrord-3.287.0"
+        }
+      }
+    },
     "path:./hack/flakes#goprintconst": {
       "last_modified": "2026-11-23T05:37:38Z",
       "resolved": "path:/home/runner/work/golang-repository-template/golang-repository-template/hack/flakes?lastModified=1795412258&narHash=sha256-I6AsDf1qKVCTaO5uH91VMZZT6P6QI3rjuXquQx9m70k%3D#goprintconst"

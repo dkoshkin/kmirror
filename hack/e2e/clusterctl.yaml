@@ -1,0 +1,8 @@
+# Copyright 2026 Dimitri Koshkin. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# clusterctl config for e2e tests. CAPK (the Kubemark provider) is not in clusterctl's built-in provider list.
+providers:
+  - name: kubemark
+    type: InfrastructureProvider
+    url: https://github.com/kubernetes-sigs/cluster-api-provider-kubemark/releases/latest/infrastructure-components.yaml

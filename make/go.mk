@@ -77,14 +77,15 @@ E2E_PARALLEL_NODES ?= $(if $(filter $(E2E_DRYRUN),true),1,$(shell nproc --ignore
 E2E_FLAKE_ATTEMPTS ?= 1
 ARTIFACTS ?= ${REPO_ROOT}/_artifacts
 
-# e2e tests run against a KinD cluster with Cluster API and the Docker infrastructure provider (CAPD) installed.
+# e2e tests run against a KinD cluster with Cluster API, CAPD and CAPK installed,
+# and run a local build of the CAPK manager under kmirror.
 .PHONY: e2e-test
 e2e-test: ## Runs e2e tests
 ifeq ($(wildcard test/e2e/*),)
 e2e-test: ; $(info $(M) no e2e tests found in test/e2e, skipping)
 else
-e2e-test: export KUBECONFIG := $(KIND_KUBECONFIG)
-e2e-test: kind.create clusterctl.init
+e2e-test: export KUBECONFIG := $(abspath $(KIND_KUBECONFIG))
+e2e-test: kind.create clusterctl.init e2e.capk-manager
 	$(info $(M) $(if $(filter $(E2E_DRYRUN), true),dry-,)running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
 	  ginkgo run \
 	    --r \
