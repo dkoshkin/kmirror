@@ -63,6 +63,12 @@ linters:
         - github.com/onsi/gomega
     testifylint:
       enable-all: true
+  exclusions:
+    rules:
+      # Repeated literals keep test fixtures readable.
+      - path: _test\.go
+        linters:
+          - goconst
 formatters:
   enable:
     - gci

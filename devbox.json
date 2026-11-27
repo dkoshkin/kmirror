@@ -20,6 +20,7 @@
     "hugo":                                 "latest",
     "kind":                                 "latest",
     "kubectl":                              "latest",
+    "mirrord":                              "latest",
     "pre-commit":                           "latest",
     "rsync":                                "latest",
     "setup-envtest":                        "latest",
