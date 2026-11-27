@@ -78,8 +78,8 @@ jobs:
                GO_TOOLCHAIN_VERSION=go<x>` — NOT `make go-update-version`, which also touches
                devbox.json/flake.nix and is the separate Monday devbox-update job's job; do not
                touch devbox.json or hack/flakes/flake.nix here).
-            3. Verify the fix with `devbox run -- make build govulncheck` (both root and api
-               modules) and `devbox run -- make unit-tests` before committing anything.
+            3. Verify the fix with `devbox run -- make build-snapshot govulncheck`
+               and `devbox run -- make test` before committing anything.
 
             If only one open PR is affected by a given fix: commit the fix onto that PR's own
             branch (`git commit`, `git push`) and move on — do not open a separate PR for a

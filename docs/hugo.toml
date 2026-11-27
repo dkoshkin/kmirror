@@ -1,5 +1,5 @@
-baseURL = "https://dkoshkin.github.io/golang-repository-template"
-title = "Golang Repository Template"
+baseURL = "https://dkoshkin.github.io/kmirror"
+title = "kmirror"
 
 enableRobotsTXT = true
 
@@ -71,7 +71,7 @@ archived_version = false
 # The version number for the version of the docs represented in this doc set.
 # Used in the "version-banner" partial to display a version number for the
 # current doc set.
-version = "0.2.3"
+version = "0.0.1"
 
 # A link to latest version of the docs. Used in the "version-banner" partial to
 # point people to the main doc site.
@@ -79,7 +79,7 @@ url_latest_version = "https://example.com"
 
 # Repository configuration (URLs for in-page links to opening issues and suggesting changes)
 # The links work despite our URL being GitLab not GitHub.
-github_repo = "https://github.com/dkoshkin/golang-repository-template"
+github_repo = "https://github.com/dkoshkin/kmirror"
 # An optional link to a related project repo. For example, the sibling repository where your product code lives.
 # The links work despite our URL being GitLab not GitHub.
 
@@ -130,8 +130,8 @@ showLightDarkModeMenu = true
 [params.ui.feedback]
 enable = true
 # The responses that the user sees after clicking "yes" (the page was helpful) or "no" (the page was not helpful).
-yes = 'Glad to hear it! Please <a href="https://github.com/dkoshkin/golang-repository-template/issues/new">tell us how we can improve</a>.'
-no = 'Sorry to hear that. Please <a href="https://github.com/dkoshkin/golang-repository-template/issues/new">tell us how we can improve</a>.'
+yes = 'Glad to hear it! Please <a href="https://github.com/dkoshkin/kmirror/issues/new">tell us how we can improve</a>.'
+no = 'Sorry to hear that. Please <a href="https://github.com/dkoshkin/kmirror/issues/new">tell us how we can improve</a>.'
 
 # Adds a reading time to the top of each doc.
 # If you want this feature, but occasionally need to remove the Reading time from a single page,
@@ -140,15 +140,10 @@ no = 'Sorry to hear that. Please <a href="https://github.com/dkoshkin/golang-rep
 enable = false
 
 [params.links]
-[[params.links.user]]
-  name ="Twitter"
-  url = "https://twitter.com/d2iq_eng"
-  icon = "fab fa-twitter"
-  desc = "Follow us on Twitter to get the latest news!"
 # Developer relevant links. These will show up on right side of footer and in the community page if you have one.
 [[params.links.developer]]
   name = "GitHub"
-  url = "https://github.com/dkoshkin/golang-repository-template"
+  url = "https://github.com/dkoshkin/kmirror"
   icon = "fab fa-github"
   desc = "Development takes place here!"
 
@@ -156,7 +151,7 @@ enable = false
 name = "GitHub"
 weight = 50
 pre = "<i class='fab fa-github'></i>"
-url = "https://github.com/dkoshkin/golang-repository-template"
+url = "https://github.com/dkoshkin/kmirror"
 
 [params.taxonomy]
 

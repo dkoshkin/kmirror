@@ -4,7 +4,7 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
 
-project_name: golang-repository-template
+project_name: kmirror
 
 changelog:
   use: github
@@ -28,8 +28,8 @@ release:
   extra_files: []
 
 builds:
-  - id: golang-repository-template
-    dir: ./cmd/golang-repository-template
+  - id: kmirror
+    dir: ./cmd/kmirror
     env:
       - CGO_ENABLED=0
     flags:
@@ -41,7 +41,6 @@ builds:
       - -X 'k8s.io/component-base/version.gitVersion=v{{ trimprefix .Version "v" }}'
       - -X 'k8s.io/component-base/version.major={{ .Major }}'
       - -X 'k8s.io/component-base/version.minor={{ .Minor }}'
-      - -X 'k8s.io/component-base/version/verflag.programName={{ .ProjectName }}'
     goos:
       - linux
       - darwin
@@ -49,44 +48,11 @@ builds:
       - amd64
       - arm64
     mod_timestamp: '{{ .CommitTimestamp }}'
-    hooks:
-      post:
-        - |
-          sh -ec 'if [ {{ .IsSnapshot }} == true ] && [ {{ .Os }} == linux ] && [ {{ .Runtime.Goarch }} == {{ .Arch }} ]; then
-            env SOURCE_DATE_EPOCH=$(date +%s) \
-                KO_DATA_DATE_EPOCH=$(date +%s) \
-                KO_DOCKER_REPO=ko.local/{{ .ProjectName }} \
-                ko build \
-                  --bare \
-                  --platform linux/{{ .Arch }} \
-                  -t v{{ trimprefix .Version "v" }}-{{ .Arch }} \
-                  ./cmd/golang-repository-template
-          fi'
 
 archives:
   - name_template: '{{ .ProjectName }}_v{{ trimprefix .Version "v" }}_{{ .Os }}_{{ .Arch }}'
     ids:
-      - golang-repository-template
-
-kos:
-  - id: golang-repository-template
-    build: golang-repository-template
-    labels:
-      org.opencontainers.image.created: "{{ .CommitDate }}"
-      org.opencontainers.image.title: "{{ .ProjectName }}"
-      org.opencontainers.image.revision: "{{ .FullCommit }}"
-      org.opencontainers.image.version: 'v{{ trimprefix .Version "v" }}'
-      org.opencontainers.image.source: "{{ .GitURL }}"
-    platforms:
-      - linux/amd64
-      - linux/arm64
-    repositories:
-      - ghcr.io/dkoshkin/golang-repository-template
-    bare: true
-    creation_time: "{{.CommitTimestamp}}"
-    ko_data_creation_time: "{{.CommitTimestamp}}"
-    tags:
-      - 'v{{ trimprefix .Version "v" }}'
+      - kmirror
 
 checksum:
   name_template: 'checksums.txt'

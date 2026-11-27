@@ -12,8 +12,5 @@ include $(INCLUDE_DIR)kind.mk
 include $(INCLUDE_DIR)go.mk
 include $(INCLUDE_DIR)goreleaser.mk
 include $(INCLUDE_DIR)tag.mk
-include $(INCLUDE_DIR)kubebuilder.mk
-include $(INCLUDE_DIR)clusterctl.mk
 include $(INCLUDE_DIR)dev.mk
-include $(INCLUDE_DIR)helm.mk
 include $(INCLUDE_DIR)docs.mk

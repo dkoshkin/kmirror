@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
-	"github.com/dkoshkin/golang-repository-template/test/helpers"
+	"github.com/dkoshkin/kmirror/test/helpers"
 )
 
 func TestEnvtestListsNamespaces(t *testing.T) {
