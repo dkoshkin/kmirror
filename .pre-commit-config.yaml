@@ -4,17 +4,6 @@
 repos:
 - repo: local
   hooks:
-  - id: kubebuilder-sync-chart
-    name: kubebuilder-sync-chart
-    entry: make kubebuilder.sync-chart
-    language: system
-    files: "^(PROJECT|config/.*|api/.*)$"
-    pass_filenames: false
-  - id: schema-chart
-    name: schema-chart
-    entry: make schema-chart
-    language: system
-    files: "^charts/golang-repository-template/values.yaml$"
   - id: go-generate
     name: go-generate
     entry: make go-generate
@@ -26,12 +15,6 @@ repos:
     entry: make lint
     language: system
     files: "(.*\\.go|go.mod|go.sum|go.mk)$"
-    pass_filenames: false
-  - id: chart-docs
-    name: chart-docs
-    entry: make chart-docs
-    language: system
-    files: "^charts/"
     pass_filenames: false
   - id: hugo-mod-tidy
     name: hugo-mod-tidy
@@ -58,7 +41,6 @@ repos:
   - id: check-yaml
     args: ["-m", "--unsafe"]
     stages: [pre-commit]
-    exclude: ^charts/.+/(templates)/.+\.ya?ml$
   - id: mixed-line-ending
     args: ["-f", "lf"]
     exclude: \.bat$
@@ -77,7 +59,6 @@ repos:
     stages: [pre-commit]
   - id: end-of-file-fixer
     stages: [pre-commit]
-    exclude: ^charts/golang-repository-template/README.md$
 - repo: https://github.com/rhysd/actionlint
   rev: v1.7.7
   hooks:
@@ -110,7 +91,7 @@ repos:
   hooks:
   - id: markdownlint
     stages: [pre-commit]
-    exclude: ^(CHANGELOG.md|charts/.+/README.md|.github/pull_request_template.md)$
+    exclude: ^(CHANGELOG.md|.github/pull_request_template.md)$
 - repo: https://github.com/Lucas-C/pre-commit-hooks
   rev: v1.5.5
   hooks:
@@ -118,7 +99,7 @@ repos:
     name: License headers - Go
     stages: [pre-commit]
     files: "(.*\\.go|go.mod)$"
-    exclude: ^(api/external/|internal/test)
+    exclude: ^internal/test
     args:
       - --license-filepath
       - hack/license/license.txt
@@ -129,7 +110,7 @@ repos:
     name: License headers - YAML and Makefiles
     stages: [pre-commit]
     files: (^Makefile|\.(ya?ml|mk))$
-    exclude: ^(internal/test|examples|docs/static/helm/index\.yaml|)$
+    exclude: ^(internal/test|examples)$
     args:
       - --license-filepath
       - hack/license/license.txt
@@ -138,7 +119,7 @@ repos:
     name: License headers - Markdown
     stages: [pre-commit]
     files: \.md$
-    exclude: ^(charts/golang-repository-template/README.md|CHANGELOG.md$|docs/|.github/pull_request_template.md$)
+    exclude: ^(CHANGELOG.md$|docs/|.github/pull_request_template.md$)
     args:
       - --license-filepath
       - hack/license/license.txt

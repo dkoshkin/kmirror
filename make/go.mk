@@ -6,7 +6,7 @@
 export GOPRIVATE ?=
 
 # Always ensure that GOOS and GOARCH are unset in the evironment, otherwise this can cause issues
-# with goreleaser and ko building images for the wrong platform.
+# with goreleaser building binaries for the wrong platform.
 override undefine GOOS
 override undefine GOARCH
 
@@ -77,12 +77,14 @@ E2E_PARALLEL_NODES ?= $(if $(filter $(E2E_DRYRUN),true),1,$(shell nproc --ignore
 E2E_FLAKE_ATTEMPTS ?= 1
 ARTIFACTS ?= ${REPO_ROOT}/_artifacts
 
+# e2e tests run against a KinD cluster with Cluster API and the Docker infrastructure provider (CAPD) installed.
 .PHONY: e2e-test
 e2e-test: ## Runs e2e tests
-e2e-test: dev.run-on-kind
+ifeq ($(wildcard test/e2e/*),)
+e2e-test: ; $(info $(M) no e2e tests found in test/e2e, skipping)
+else
 e2e-test: export KUBECONFIG := $(KIND_KUBECONFIG)
-ifneq ($(wildcard test/e2e/*),)
-e2e-test:
+e2e-test: kind.create clusterctl.init
 	$(info $(M) $(if $(filter $(E2E_DRYRUN), true),dry-,)running e2e tests$(if $(E2E_LABEL), labelled "$(E2E_LABEL)")$(if $(E2E_FOCUS), matching "$(E2E_FOCUS)"))
 	  ginkgo run \
 	    --r \
@@ -190,8 +192,6 @@ go-fix.%: ; $(info $(M) go fixing $* module)
 go-generate: ## Runs go generate
 go-generate: ; $(info $(M) running go generate)
 	go generate -x ./...
-	# Run Kubebuilder generators
-	$(MAKE) generate manifests
 	$(MAKE) go-fix fmt
 
 .PHONY: govulncheck

@@ -3,106 +3,61 @@
  SPDX-License-Identifier: Apache-2.0
  -->
 
-# Golang Repository Template
+# kmirror
 
-[![build](https://github.com/dkoshkin/golang-repository-template/actions/workflows/build.yaml/badge.svg)](https://github.com/dkoshkin/golang-repository-template/actions/workflows/build.yaml)
-[![codecov](https://codecov.io/github/dkoshkin/golang-repository-template/graph/badge.svg?token=RUEME4RFZK)](https://codecov.io/github/dkoshkin/golang-repository-template)
+[![build](https://github.com/dkoshkin/kmirror/actions/workflows/build.yaml/badge.svg)](https://github.com/dkoshkin/kmirror/actions/workflows/build.yaml)
+[![codecov](https://codecov.io/github/dkoshkin/kmirror/graph/badge.svg)](https://codecov.io/github/dkoshkin/kmirror)
 
-This repository serves as a starting point for new Golang projects.
-It includes a Makefile with common development targets with `make`,
-a pre-configured development environment using [Devbox][Devbox],
-GitHub Actions workflows, and [release-please-action][release-please-action] for release automation.
+kmirror swaps a running in-cluster Kubernetes controller for a binary you built locally, without modifying the
+Deployment. It wraps [mirrord][mirrord] so your binary runs with the Pod's network, DNS, environment and
+ServiceAccount, takes over the controller's leader-election Lease so only your local copy reconciles,
+and hands control back to the in-cluster controller when you exit.
 
-The template is configured with [Kubebuilder][Kubebuilder] v4 for building Kubernetes operators.
-Kubebuilder manifests in `config/` are automatically synced to the Helm chart using the `kubebuilder.sync-chart` make target,
-which uses the Kubebuilder Helm plugin to keep your chart in sync with generated RBAC, manager, and other Kubernetes resources
+> **Status:** early development. The CLI is not implemented yet.
+
+## How it works
+
+```bash
+kmirror -n capk-system -d capk-controller-manager ./bin/manager -- --zap-devel=true
+```
+
+1. **Discovers the setup from the Deployment.** It picks the `manager` container (or the first container),
+   its probe ports, the ports to steal (typically the `9443` webhook port), the secret and projected mounts
+   to read from the Pod (webhook serving certs, ServiceAccount token), and the leader-election Lease held by
+   the current leader Pod.
+2. **Builds the command line.** It inherits the container's flags, drops the ones that don't make sense locally
+   (`--kubeconfig`, leader election, metrics, health and profiler bind addresses), expands `$(VAR)` references,
+   adds `--leader-elect=false` and appends anything after `--`.
+3. **Checks the binary.** On Linux, mirrord injects with `LD_PRELOAD`, so the binary must be dynamically linked
+   (`CGO_ENABLED=1 go build ...`). kmirror fails early on a static binary.
+4. **Takes over leadership.** It patches the Lease to its own holder identity and keeps renewing it.
+   The in-cluster manager loses leadership, restarts once, and comes back as a Ready standby that does not reconcile.
+5. **Runs your binary under mirrord.** Only the webhook port is stolen, so kubelet probes still reach the real
+   container. `KUBECONFIG` is unset, so your binary authenticates as the Pod's ServiceAccount.
+6. **Cleans up on exit.** It deletes the Lease if it still holds it, and the in-cluster manager resumes
+   reconciling within seconds.
+
+Options:
+
+- `--dry-run` prints the detected ports, Lease, final command line and mirrord config without changing anything.
+- `--no-takeover` leaves the Lease alone, so the local copy only serves webhooks.
+- `-p <port>` overrides the detected steal ports.
 
 ## Prerequisites
 
-- [Devbox][Devbox] (creates the toolchain via Nix)
-- [direnv][direnv] (loads the Devbox environment when you enter the repo)
-- Docker (required for Kind, Helm chart install, and e2e tests)
+- [kubectl][kubectl] access to the target cluster
+- [mirrord][mirrord] CLI on your `PATH`
+- A locally built controller binary (dynamically linked on Linux)
 
-## Usage Instructions
+## Development
 
-Use this repo as the template for a new repository by making the following changes.
+### Setup
 
-### Changes in the repository
+1. Install [Devbox][Devbox] (creates the toolchain via Nix).
+2. Install [direnv][direnv] and run `direnv allow`.
+3. Install the [pre-commit][pre-commit-hooks] git hooks with `pre-commit install`.
 
-1. Add an initial version for release-please.
-
-   ```bash
-   git commit --allow-empty -m "chore: release 0.0.1" -m "Release-As: 0.0.1" && git push origin main
-   ```
-
-2. Search and replace all instances of `golang-repository-template` and `Golang Repository Template`
-   with your project's name.
-3. Search and replace all instances of `github.com/dkoshkin` with your Github username.
-4. Search and replace all instances of `com.dimitrikoshkin` with your company domain.
-5. Rename the folder in `cmd/` and `charts/` with your project's name.
-6. Update the files in `hack/license` with your details.
-7. Clear out the release-please version.
-
-   ```bash
-   echo "{}" > .release-please-manifest.json
-   ```
-
-#### Kubebuilder
-
-This template is initialized with [Kubebuilder][Kubebuilder] to build Kubernetes controllers.
-To remove, make the following changes:
-
-1. Remove `kubebuilder.sync-chart` target in [`make/goreleaser.mk`](make/goreleaser.mk).
-2. Remove `generate manifests` target from [`make/go.mk`](make/go.mk).
-3. Delete the [`make/kubebuilder.mk`](make/kubebuilder.mk) and remove its reference from [`make/all.mk`](make/all.mk).
-4. Delete the [`PROJECT`](PROJECT) file.
-5. Delete the [`config/`](config/) directory.
-
-### Changes in Github
-
-1. Go to `Settings` > `General` and enable `Allow auto-merge` and `Automatically delete head branches`.
-2. Go to `Settings` > `General` > `Pull Requests` and unselect `Allow merge commits` and `Allow rebase merging`.
-3. Create a [Github PATs][Github-PAT] to use in Github automation.
-   - Another to use with [Devbox][Devbox] update automation, adding the following permissions:
-     - Contents: read and write
-     - Pull Requests: read and write
-     - Issues: read and write
-
-     Go to `Settings` > `Secrets and variables` > `Actions` and add is as `DEPENDENCY_AUTOMATION_TOKEN`.
-
-     Go to `Settings` > `Secrets and variables` > `Actions` and add these Secrets
-     `GIT_SSH_SIGNING_PRIVATE_KEY`, `GIT_USER_NAME` and `GIT_USER_EMAIL`.
-4. Go to `Settings` > `Branches` > `Add branch ruleset` and configure it for the "default" and `release/**/*` branches.
-   Enable `Require signed commits` and `Require a pull request before merging`.
-   Enable `Require status checks to pass` with the following checks:
-   - build / build
-   - lint / gha
-   - lint / go (.)
-   - lint / go (api)
-   - lint / helm
-   - pre-commit / pre-commit
-   - unit-tests / unit-tests
-   - govulncheck / govulncheck (.)
-   - govulncheck / govulncheck (api)
-   - codeql / analyze (go)
-   - e2e-tests / e2e-tests
-5. Go to `Settings` > `Pages` > `Branch` and select `main` and `/docs` as the Source.
-
-### Changes in Codecov
-
-This template is configured with [Codecov][Codecov] that must be configured before using.
-
-Go to `Settings` > `Secrets and variables` > `Actions` and add the generated token as `CODECOV_TOKEN`.
-
-## Setup your Dev Environment
-
-1. Install [Devbox][Devbox]
-2. Install [direnv][direnv]
-   - run `direnv allow`
-3. Install [pre-commit][pre-commit-hooks] git hooks
-   - run `pre-commit install`
-
-Tip: to see all available make targets with descriptions, simply run `make`.
+Run `make` to list all targets with descriptions.
 
 ### Test
 
@@ -110,10 +65,8 @@ Tip: to see all available make targets with descriptions, simply run `make`.
 make test
 ```
 
-`make test` downloads Kubernetes envtest assets (`setup-envtest`,
-pinned by `ENVTEST_VERSION` in the Makefile) and runs unit/integration tests with race detection and coverage.
-
-This repository is configured with [Codecov][Codecov] but can be removed by modifying `.github/workflows/unit-tests.yaml`.
+`make test` downloads Kubernetes envtest assets (`setup-envtest`, pinned by `ENVTEST_VERSION` in the Makefile)
+and runs unit and integration tests with race detection and coverage.
 
 ### Build
 
@@ -121,43 +74,77 @@ This repository is configured with [Codecov][Codecov] but can be removed by modi
 make build-snapshot
 ```
 
-The binary for your OS will be placed in `./dist`,
-e.g. `./dist/golang-repository-template_darwin_arm64_v8.0/golang-repository-template`:
+The binary for your OS is placed in `./dist`, e.g. `./dist/kmirror_darwin_arm64_v8.0/kmirror`.
 
 ### Lint
 
 ```bash
 make lint
-make lint-chart
-```
-
-### Pre-commit
-
-```bash
 make pre-commit
 ```
 
-### Helm Chart
+### e2e tests
 
 ```bash
-make chart-docs
-make schema-chart
+make e2e-test
 ```
 
-### Build Tooling
+e2e tests live in `test/e2e` (Ginkgo, `e2e` build tag). The target creates a KinD cluster, installs
+Cluster API with the Docker infrastructure provider (CAPD) using `clusterctl`, then runs the suite.
+The planned test runs a local checkout of the same CAPI version under kmirror and verifies it reconciles
+by creating a Docker cluster. Until tests exist, the target is a no-op.
 
-The repository is configured with automation to periodically update dependencies.
+### Local cluster
 
-- [dependabot action][dependabot-action] to update both Github Actions and Golang `go.mod` dependencies using [Dependabot][Dependabot].
-- [devbox action][devbox-action] to update [Devbox][Devbox] packages.
+```bash
+make kind.create
+eval "$(make kind.kubeconfig)"
+```
+
+### Docs
+
+```bash
+make preview-docs
+```
+
+The docs site in [`docs/`](docs/) is built with Hugo and published to GitHub Pages on every push to `main`.
+
+## Releases
+
+Releases are automated with [release-please][release-please-action].
+Merging the release PR tags the release and runs [goreleaser][goreleaser], which publishes binaries for
+Linux and macOS (`amd64`, `arm64`) to [GitHub Releases](https://github.com/dkoshkin/kmirror/releases).
+
+PR titles must follow [Conventional Commits](https://www.conventionalcommits.org/).
+
+## Repository automation
+
+- [Dependabot][Dependabot] updates GitHub Actions, Go modules and docs npm dependencies weekly.
+  Dependabot PRs are auto-merged once checks pass.
+- [Devbox update][devbox-action] updates Devbox packages and the Go version weekly.
+- Dependabot consolidation uses Claude Code to fix and combine Dependabot PRs that fail checks.
+
+### Required secrets
+
+| Secret                        | Used by                                    |
+|-------------------------------|--------------------------------------------|
+| `DEPENDENCY_AUTOMATION_TOKEN` | Devbox update, Dependabot consolidation    |
+| `GIT_SSH_SIGNING_PRIVATE_KEY` | Signing automated commits                  |
+| `GIT_USER_NAME`               | Author of automated commits                |
+| `GIT_USER_EMAIL`              | Author of automated commits                |
+| `CLAUDE_CODE_OAUTH_TOKEN`     | Dependabot consolidation                   |
+| `CODECOV_TOKEN`               | Coverage upload in unit tests              |
+
+`DEPENDENCY_AUTOMATION_TOKEN` is a fine-grained [GitHub PAT][Github-PAT] for this repository with
+read and write access to Contents, Pull requests and Issues.
 
 [Devbox]: https://www.jetify.com/docs/devbox/installing-devbox
-[release-please-action]: https://github.com/googleapis/release-please-action
-[Github-PAT]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
 [direnv]: https://direnv.net/
-[Codecov]: https://about.codecov.io/
 [pre-commit-hooks]: https://pre-commit.com/#3-install-the-git-hook-scripts
+[mirrord]: https://github.com/metalbear-co/mirrord
+[kubectl]: https://kubernetes.io/docs/tasks/tools/
+[release-please-action]: https://github.com/googleapis/release-please-action
+[goreleaser]: https://goreleaser.com/
+[Github-PAT]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
 [Dependabot]: https://docs.github.com/en/code-security/getting-started/dependabot-quickstart-guide
-[dependabot-action]: https://github.com/dkoshkin/golang-repository-template/actions/workflows/dependabot/dependabot-updates
-[devbox-action]: https://github.com/dkoshkin/golang-repository-template/actions/workflows/devbox-dependencies-update.yaml
-[Kubebuilder]: https://book.kubebuilder.io/
+[devbox-action]: https://github.com/dkoshkin/kmirror/actions/workflows/devbox-dependencies-update.yaml

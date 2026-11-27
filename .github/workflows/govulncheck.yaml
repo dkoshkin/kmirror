@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        module: [., api]
+        module: [.]
       fail-fast: false
     steps:
       - name: Check out code
